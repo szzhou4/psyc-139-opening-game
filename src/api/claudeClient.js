@@ -65,11 +65,21 @@ function buildSystem(profile) {
     { type: "text", text: STATIC_SYSTEM, cache_control: CACHE_CONTROL },
     {
       type: "text",
-      text: `The student's profile:
-- Major/field: ${profile.major}
-- Relevant past experience: ${profile.experience}
+      // Framed explicitly as starting conditions. Stated as a plain "profile",
+      // the model reads these as the person's *present* situation and keeps
+      // writing fresh-graduate scenarios no matter what age it is given.
+      text: `STARTING CONDITIONS — who this person was at age 22, when the
+simulation begins. This is their backstory, NOT their current situation:
+
+- What they studied in college: ${profile.major}
+- An experience they had before graduating: ${profile.experience}
 - What they most want from their career: ${profile.aspiration}
-- What they most fear: ${profile.fear}`,
+- What they most fear: ${profile.fear}
+
+These shape the kind of working life the simulation gives them, and their
+motivations stay relevant throughout. But after the first decision they are no
+longer a student and never return to one. At later ages, their degree is
+something they earned decades ago, not something they are finishing.`,
     },
   ];
 }
@@ -115,7 +125,7 @@ function logCacheUsage(usage) {
 // ---------------------------------------------------------------------------
 
 const SCENARIO_RULES = `Follow these rules:
-1. Write in second person, present tense ("You are 27. Your manager approaches you...")
+1. Write in second person, present tense.
 2. LENGTH IS A HARD CONSTRAINT: no more than 100 words, in 4–5 sentences.
    Students read eleven of these in a 15-minute class activity, and the text has
    to fit on screen above the choice buttons. Going over is a failure, not a
@@ -128,19 +138,79 @@ const SCENARIO_RULES = `Follow these rules:
 6. Do not moralize or signal which choice is "correct"
 7. Return only the scenario text — no preamble, no labels, no commentary`;
 
+const CONTINUITY_RULES = `CONTINUITY — this is one continuous life, not eleven separate vignettes:
+
+- The stated age is authoritative. Use it. Never state or imply a different age,
+  and never contradict the ages of earlier decisions.
+- Their career so far is given below. This scenario is the NEXT CHAPTER of that
+  story. Do not restart them, re-graduate them, or put them back at an earlier
+  stage.
+- Refer to at least one specific earlier choice by its consequence, not by
+  restating it. If they went self-directed at 46, then at 50 they have clients,
+  not a manager. If they took the promotion at 25, they carry that seniority.
+- Let earlier choices constrain what is plausible now. Someone who left for a
+  calling at 42 is not casually offered a corporate ladder at 46 — if the
+  decision point requires it, explain how it reached them.
+- Keep the through-line concrete: the same field, the same accumulating
+  expertise, the same relationships aging alongside them. Invent details freely,
+  but once invented they are fixed for the rest of the run.
+- Do not summarize their history back to them. Let it show through the
+  situation.`;
+
 // --- API Call 1: decision scenario personalization --------------------------
 
-export async function generateScenario(profile, decision) {
-  const userMessage = `Generate a career decision scenario for this decision point.
+/**
+ * `history` is the decisions already made, in order. Passing it is what makes
+ * the eleven scenarios read as one life rather than eleven unrelated vignettes.
+ * It also carries the scenario text of the previous step so the model can
+ * continue concrete details (employer, field, relationships) instead of
+ * inventing a fresh set each time.
+ */
+export async function generateScenario(profile, decision, history = []) {
+  const storySoFar = history.length
+    ? history
+        .map(
+          (d) =>
+            `- Age ${d.age}: chose "${d.choiceLabel}"` +
+            (d.scenarioText ? `\n    situation: ${d.scenarioText}` : "")
+        )
+        .join("\n")
+    : "(This is the very first decision — they are just starting out.)";
 
-Decision concept: ${decision.courseConceptTag}
-Base scenario frame: ${decision.baseScenarioFrame}
-Choice A label: ${decision.choiceALabel}
-Choice B label: ${decision.choiceBLabel}
+  const yearsOut = decision.age - 22;
+  const stageNote =
+    yearsOut === 0
+      ? "They have just finished college. This is the only scenario where that is true."
+      : `They finished college ${yearsOut} years ago. They are an established working adult, ` +
+        `not a student and not a new graduate. Do NOT write about graduating, finishing a ` +
+        `degree, or looking for a first job.`;
+
+  const userMessage = `=== AGE: ${decision.age} ===
+
+This person is ${decision.age} years old. ${stageNote}
+
+Their career so far:
+
+${storySoFar}
+
+=== THE DECISION TO WRITE ===
+
+Concept: ${decision.courseConceptTag}
+Base dilemma: ${decision.baseScenarioFrame}
+Choice A: ${decision.choiceALabel}
+Choice B: ${decision.choiceBLabel}
+
+The base dilemma is written generically. Your job is to stage that same
+underlying choice inside this specific person's life at ${decision.age}. Keep
+the choice intact; change everything else so it fits where they actually are.
+
+${CONTINUITY_RULES}
 
 ${SCENARIO_RULES}
 
-Make it feel specific and real for this student. Maximum 100 words.`;
+Before you write, check: is this a situation a ${decision.age}-year-old with the
+history above would actually face? If it reads like it could open the story, it
+is wrong. Maximum 100 words.`;
 
   return callClaude(buildSystem(profile), userMessage);
 }
@@ -149,7 +219,7 @@ Make it feel specific and real for this student. Maximum 100 words.`;
 
 export async function generateNarrative(profile, madeDecisions) {
   const summary = madeDecisions
-    .map((d) => `- ${d.courseConceptTag}: Chose "${d.choiceMade}" (${d.choiceLabel})`)
+    .map((d) => `- Age ${d.age} — ${d.courseConceptTag}: chose "${d.choiceLabel}"`)
     .join("\n");
 
   const userMessage = `The student has completed their career simulation. Here is a summary of every decision they made:
@@ -170,7 +240,7 @@ Ground the narrative in vocational psychology concepts where natural — don't f
 
 export async function generateOutcomeCard(profile, madeDecisions) {
   const summary = madeDecisions
-    .map((d) => `- ${d.courseConceptTag}: ${d.choiceLabel}`)
+    .map((d) => `- Age ${d.age} — ${d.courseConceptTag}: ${d.choiceLabel}`)
     .join("\n");
 
   const userMessage = `Based on these career decisions:
@@ -190,7 +260,7 @@ Be specific and honest — not all outcomes should feel triumphant. Return only 
 
 export async function generateNodeNotes(profile, madeDecisions) {
   const summary = madeDecisions
-    .map((d, i) => `${i + 1}. ${d.courseConceptTag} — chose: ${d.choiceLabel}`)
+    .map((d, i) => `${i + 1}. Age ${d.age} — ${d.courseConceptTag}: chose "${d.choiceLabel}"`)
     .join("\n");
 
   const userMessage = `Here are the ${madeDecisions.length} decisions the student made, in order:

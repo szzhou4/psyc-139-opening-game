@@ -51,6 +51,7 @@ function reducer(state, action) {
         ...state.decisions,
         {
           id: src.id,
+          age: src.age,
           courseConceptTag: src.courseConceptTag,
           scenarioText: action.scenarioText,
           choiceALabel: src.choiceALabel,
@@ -117,11 +118,14 @@ export default function App() {
 
   /**
    * Fetch a scenario if we don't already have it (or have one in flight).
-   * Prefetching the *next* decision while the student reads the current one is
-   * what keeps the simulation inside its 15–20 minute budget.
+   *
+   * This can no longer be prefetched. Each scenario is written against the
+   * choices already made, so decision N+1 literally cannot be generated until
+   * the student has answered decision N. The tradeoff is a short wait between
+   * decisions in exchange for eleven scenarios that read as one continuous life.
    */
   const ensureScenario = useCallback(
-    async (index, profile) => {
+    async (index, profile, history) => {
       const decision = DECISIONS[index];
       if (!decision) return;
       if (state.scenarios[decision.id] || inFlight.current.has(decision.id)) return;
@@ -137,7 +141,7 @@ export default function App() {
 
       inFlight.current.add(decision.id);
       try {
-        const text = await generateScenario(profile, decision);
+        const text = await generateScenario(profile, decision, history);
         dispatch({ type: "SCENARIO_READY", id: decision.id, text });
       } catch (err) {
         console.error(`Scenario generation failed for ${decision.id}:`, err);
@@ -153,23 +157,17 @@ export default function App() {
     [state.scenarios]
   );
 
-  // Current decision + one ahead.
+  // Generate the current decision, using every choice made so far as context.
   useEffect(() => {
     if (state.screen !== "decision") return;
-    let cancelled = false;
-    // Deliberately sequential. A request cannot read a cache entry that another
-    // request is still writing, so firing these in parallel makes both pay the
-    // full uncached price. Awaiting the current one means the prefetch reads the
-    // cache it just wrote — and the prefetch still runs while the student reads.
-    (async () => {
-      await ensureScenario(state.currentDecisionIndex, state.profile);
-      if (cancelled) return;
-      await ensureScenario(state.currentDecisionIndex + 1, state.profile);
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [state.screen, state.currentDecisionIndex, state.profile, ensureScenario]);
+    ensureScenario(state.currentDecisionIndex, state.profile, state.decisions);
+  }, [
+    state.screen,
+    state.currentDecisionIndex,
+    state.profile,
+    state.decisions,
+    ensureScenario,
+  ]);
 
   // Narrative + outcome card + node notes, all in parallel.
   useEffect(() => {
