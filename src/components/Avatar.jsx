@@ -240,18 +240,30 @@ export default function Avatar({
         <g className="avatar-head" style={{ animation: a.head, ...pivot(60, 56) }}>
           {/* neck */}
           <path d="M55 44 L65 44 L65 58 L55 58 Z" fill={SKIN_SHADE} />
+
+          {/* Hair, built from simple shapes so the silhouette stays clean at
+              every size: a rounded cap plus two side lengths that stop level
+              with the jaw. Cropped close reads as a men's cut and chin-length
+              reads as a women's bob — this deliberately sits between them, with
+              rounded ends so it never flicks out to either side. */}
+          <g fill={isAged ? "#4A423C" : HAIR}>
+            <rect x="41.5" y="28" width="7" height="12" rx="3.5" />
+            <rect x="71.5" y="28" width="7" height="12" rx="3.5" />
+            <ellipse cx="60" cy="29" rx="18" ry="17" />
+          </g>
+
           {/* face */}
           <ellipse cx="60" cy="32" rx="14.5" ry="16" fill="url(#headGrad)" />
-          {/* ear */}
-          <circle cx="45.5" cy="33" r="2.8" fill={SKIN_SHADE} />
-          {/* hair — a soft crown, gender-neutral */}
+
+          {/* fringe — one solid sweep, no inner seam */}
           <path
-            d="M45 32 Q44 14 60 14 Q76 14 75 32 Q73 22 60 22 Q47 22 45 32 Z"
+            d="M45.5 31 Q46 15 60 15 Q74 15 74.5 31 Q60 23.5 45.5 31 Z"
             fill={isAged ? "#4A423C" : HAIR}
           />
+
           {isAged && (
-            // grey at the temple: fifteen years later
-            <path d="M45.5 31 Q46 18 55 15 Q48 22 47 32 Z" fill={HAIR_GREY} />
+            // grey coming in at the temple: decades later
+            <path d="M45 33 Q44.5 19 54 15.5 Q47.5 22 46.5 34 Z" fill={HAIR_GREY} />
           )}
           {/* eyes + a suggestion of a mouth */}
           <circle cx="54" cy="33" r="1.7" fill={LINE} />
