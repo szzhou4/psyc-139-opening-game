@@ -273,15 +273,10 @@ export default function CareerMap({
         <button
           className="btn btn-ghost"
           onClick={onRestart}
-          style={{ marginTop: 28, marginBottom: 64 }}
+          style={{ marginTop: 28 }}
         >
           Run it again
         </button>
-      </div>
-
-      <div className="reflection-bar">
-        Hold onto this. In a few minutes, you'll write a letter from this
-        version of yourself.
       </div>
     </div>
   );

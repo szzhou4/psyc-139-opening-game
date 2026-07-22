@@ -44,11 +44,13 @@ export default function DecisionScreen({
   return (
     <div className={`screen ${leaving ? "screen-out" : ""}`}>
       <div className="progress-rail">
+        {/* The course concept is deliberately not shown here — naming it while
+            the student is still deciding primes the answer. It's revealed on
+            the career map at the end, where it becomes the teaching point. */}
         <div className="progress-meta">
           <span>
             Decision {index + 1} of {total}
           </span>
-          <span>{decision.courseConceptTag}</span>
         </div>
         <div className="progress-track">
           <div className="progress-fill" style={{ width: `${pct}%` }} />
@@ -62,8 +64,6 @@ export default function DecisionScreen({
 
         <div className="decision-right">
           <div className="decision-card">
-            <div className="eyebrow concept-tag">{decision.courseConceptTag}</div>
-
             {loading ? (
               <LoadingState />
             ) : (

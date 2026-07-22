@@ -285,6 +285,9 @@ button:disabled {
   min-width: 0;
 }
 
+/* Capped to the viewport and laid out as a column so the choice buttons are
+   always reachable — a long scenario scrolls inside the card instead of
+   pushing them off screen. */
 .decision-card {
   background: var(--ivory);
   color: var(--charcoal);
@@ -292,6 +295,9 @@ button:disabled {
   padding: 32px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
   animation: fadeUp 400ms ease-out both;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 150px);
 }
 
 .concept-tag {
@@ -306,12 +312,15 @@ button:disabled {
   color: var(--charcoal);
   margin: 0 0 30px;
   animation: fadeIn 400ms ease-in both;
+  overflow-y: auto;
+  min-height: 0;
 }
 
 .choices {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  flex-shrink: 0;
 }
 
 .choice {
@@ -481,7 +490,7 @@ button:disabled {
   height: 100%;
   background: rgba(0, 0, 0, 0.28);
   border-left: 1px solid rgba(247, 244, 239, 0.09);
-  padding: 44px 36px 88px;
+  padding: 44px 36px;
   overflow-y: auto;
 }
 
@@ -530,22 +539,6 @@ button:disabled {
   line-height: 1.68;
   color: var(--ivory);
   margin: 0;
-}
-
-.reflection-bar {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: var(--plum);
-  color: var(--ivory);
-  text-align: center;
-  padding: 18px 24px;
-  font-family: var(--serif);
-  font-style: italic;
-  font-size: 1.05rem;
-  z-index: 30;
-  animation: fadeUp 600ms ease-out both;
 }
 
 .map-hint {

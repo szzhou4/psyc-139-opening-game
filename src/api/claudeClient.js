@@ -87,7 +87,9 @@ export async function callClaude(system, userMessage) {
  */
 function logCacheUsage(usage) {
   if (!usage) return;
-  console.debug(
+  // console.log, not console.debug — Chrome files debug under "Verbose", which
+  // is hidden at the default log level, so the instructor would never see this.
+  console.log(
     `[cache] read=${usage.cache_read_input_tokens ?? 0} ` +
       `write=${usage.cache_creation_input_tokens ?? 0} ` +
       `uncached=${usage.input_tokens ?? 0}`
@@ -100,10 +102,15 @@ function logCacheUsage(usage) {
 
 const SCENARIO_RULES = `Follow these rules:
 1. Write in second person, present tense ("You are 27. Your manager approaches you...")
-2. Keep the scenario to 3–4 sentences maximum
+2. LENGTH IS A HARD CONSTRAINT: no more than 100 words, in 4–5 sentences.
+   Students read eleven of these in a 15-minute class activity, and the text has
+   to fit on screen above the choice buttons. Going over is a failure, not a
+   richer answer. Spend the words on the situation and the tension, not on
+   explaining what each option would give them — the choice buttons say that.
 3. Make the decision feel genuinely difficult — both choices should be defensible
 4. Ground the scenario in the specific course concept for this decision point
-5. Reference the student's major, experience, aspiration, or fear where it adds realism
+5. Reference ONE of the student's four profile details where it adds realism —
+   not all four. Specificity beats completeness.
 6. Do not moralize or signal which choice is "correct"
 7. Return only the scenario text — no preamble, no labels, no commentary`;
 
@@ -119,7 +126,7 @@ Choice B label: ${decision.choiceBLabel}
 
 ${SCENARIO_RULES}
 
-Make it feel specific and real for this student. 3–4 sentences only.`;
+Make it feel specific and real for this student. Maximum 100 words.`;
 
   return callClaude(buildSystem(profile), userMessage);
 }

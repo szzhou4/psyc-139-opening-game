@@ -146,8 +146,19 @@ export default function App() {
   // Current decision + one ahead.
   useEffect(() => {
     if (state.screen !== "decision") return;
-    ensureScenario(state.currentDecisionIndex, state.profile);
-    ensureScenario(state.currentDecisionIndex + 1, state.profile);
+    let cancelled = false;
+    // Deliberately sequential. A request cannot read a cache entry that another
+    // request is still writing, so firing these in parallel makes both pay the
+    // full uncached price. Awaiting the current one means the prefetch reads the
+    // cache it just wrote — and the prefetch still runs while the student reads.
+    (async () => {
+      await ensureScenario(state.currentDecisionIndex, state.profile);
+      if (cancelled) return;
+      await ensureScenario(state.currentDecisionIndex + 1, state.profile);
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, [state.screen, state.currentDecisionIndex, state.profile, ensureScenario]);
 
   // Narrative + outcome card + node notes, all in parallel.
