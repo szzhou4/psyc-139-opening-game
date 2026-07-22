@@ -17,7 +17,7 @@ export default function WelcomeScreen({ onBegin }) {
             Begin
           </button>
           <p className="fine-print">
-            This will take about 15–20 minutes. There are no right answers.
+            This will take about 10–15 minutes. There are no right answers.
           </p>
         </div>
       </div>

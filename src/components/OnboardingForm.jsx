@@ -51,11 +51,19 @@ export default function OnboardingForm({ onSubmit, apiKeyMissing }) {
         </div>
 
         <form className="onboarding-form" onSubmit={handleSubmit}>
-          <h1 className="headline" style={{ fontSize: "2.1rem" }}>
+          <h1 className="headline" style={{ fontSize: "1.8rem" }}>
             Before we begin, tell us a little about yourself.
           </h1>
-          <p className="subheadline" style={{ marginBottom: 32 }}>
+          <p className="subheadline" style={{ marginBottom: 14 }}>
             Your answers will shape everything that follows.
+          </p>
+
+          <p className="disclaimer">
+            Nothing here is saved — your answers stay in this browser tab and
+            disappear when you close it. They're sent to the Claude API to write
+            your scenarios, and nowhere else. Prefer not to use your own
+            background? Invent a character instead. We'd encourage you to answer
+            honestly, though — it's a better simulation when it's about you.
           </p>
 
           {apiKeyMissing && (

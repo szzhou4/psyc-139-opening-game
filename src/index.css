@@ -178,7 +178,7 @@ button:disabled {
   gap: 56px;
   max-width: 1000px;
   margin: 0 auto;
-  padding: 48px 24px;
+  padding: 28px 24px;
   flex: 1;
 }
 
@@ -192,9 +192,49 @@ button:disabled {
   flex: 1;
 }
 
+.disclaimer {
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: rgba(247, 244, 239, 0.5);
+  border-left: 2px solid rgba(184, 154, 90, 0.45);
+  padding-left: 14px;
+  margin: 0 0 18px;
+  max-width: 46em;
+  animation: fadeUp 500ms ease-out 60ms both;
+}
+
 .field {
-  margin-bottom: 22px;
+  margin-bottom: 12px;
   animation: fadeUp 500ms ease-out both;
+}
+
+/* Short laptop viewports (13" with a bookmarks bar, projector mirroring, etc.).
+   The form must fit without scrolling — a student who can't see "Start
+   Simulation" is stuck. Shrink the decorative avatar and tighten spacing rather
+   than let the button fall below the fold. */
+@media (max-height: 720px) {
+  .onboarding {
+    padding: 16px 24px;
+    gap: 32px;
+  }
+
+  .onboarding-avatar {
+    flex: 0 0 24%;
+  }
+
+  .onboarding-avatar svg {
+    max-height: 190px;
+    width: auto;
+  }
+
+  .disclaimer {
+    font-size: 0.75rem;
+    margin-bottom: 14px;
+  }
+
+  .field {
+    margin-bottom: 10px;
+  }
 }
 
 .field label {
@@ -211,7 +251,7 @@ button:disabled {
   background: rgba(247, 244, 239, 0.04);
   border: 1px solid rgba(247, 244, 239, 0.15);
   border-radius: var(--radius-btn);
-  padding: 13px 15px;
+  padding: 11px 14px;
   font-family: var(--sans);
   font-size: 0.95rem;
   color: var(--ivory);

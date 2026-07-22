@@ -6,7 +6,7 @@ work through 11 career decision points personalized by the Claude API, and
 finish with an animated map of the path they built plus a generated narrative
 of their simulated working life.
 
-Target completion time: 15–20 minutes.
+Target completion time: 10–15 minutes.
 
 ## Setup
 
@@ -140,8 +140,11 @@ per-student or time-varying was added ahead of the cache breakpoint in
 
 ## Architecture notes
 
-- **Prefetching:** `App.jsx` generates the *next* scenario while the student
-  reads the current one, so only the first decision has a visible wait.
+- **Narrative continuity:** each scenario is generated from the full history of
+  choices made so far, and every decision has a fixed age (22 → 62), so the
+  eleven scenarios read as one continuous life. This rules out prefetching —
+  scenario N+1 is written against the choice made at N — so there is a short
+  wait between decisions by design.
 - **Error handling:** any failed scenario call falls back to that decision's
   `baseScenarioFrame`; the finale falls back to generic text. Errors are logged
   to the console and never crash the run.
