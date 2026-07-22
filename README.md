@@ -65,8 +65,13 @@ One-time setup:
 3. Before the first deploy, expand **Environment Variables** and add:
    - Name: `ANTHROPIC_API_KEY`
    - Value: your key
-   - Environments: Production, Preview, Development
+   - Environment: **Production and Preview**
 4. Click **Deploy**.
+
+> Vercel pre-selects **Development**, which is the one option that won't work
+> here — it only applies to the `vercel dev` CLI, and local `npm run dev` reads
+> `.env.local` instead. Deployed builds read **Production**; leaving the default
+> selected makes the live site report `configured: false`.
 
 You get a URL like `https://psyc-139-opening-game.vercel.app` — that's the link
 for students. Every `git push` to `main` redeploys automatically.
