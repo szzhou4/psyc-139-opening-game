@@ -60,9 +60,9 @@ export default function OnboardingForm({ onSubmit, apiKeyMissing }) {
 
           {apiKeyMissing && (
             <div className="notice">
-              No API key found. The simulation will still run, but scenarios
-              will use their generic wording instead of being personalized to
-              you.
+              The server has no Anthropic API key configured. The simulation
+              will still run, but scenarios will use their generic wording
+              instead of being personalized to you.
             </div>
           )}
 

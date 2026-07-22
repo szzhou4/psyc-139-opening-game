@@ -1,10 +1,31 @@
 import { CAREER_SCIENCE_KNOWLEDGE_BASE } from "../data/knowledgeBase";
 
-const ANTHROPIC_API_KEY = import.meta.env.VITE_ANTHROPIC_API_KEY;
-const MODEL = "claude-sonnet-4-5";
-const MAX_TOKENS = 1000;
+/**
+ * All calls go through our own serverless function (see api/claude.js), which
+ * holds the Anthropic key server-side. The key is never shipped to the browser,
+ * so the model and token ceiling are set there rather than here.
+ */
+const API_ENDPOINT = "/api/claude";
 
-export const hasApiKey = Boolean(ANTHROPIC_API_KEY);
+// null = not yet probed. The UI uses this to warn the instructor if the server
+// has no key configured, without ever learning anything about the key itself.
+let apiConfigured = null;
+
+export function isApiConfigured() {
+  return apiConfigured;
+}
+
+export async function probeApi() {
+  try {
+    const res = await fetch(API_ENDPOINT, { method: "GET" });
+    const data = await res.json();
+    apiConfigured = Boolean(data.configured);
+  } catch (err) {
+    console.error("Could not reach the Claude proxy:", err);
+    apiConfigured = false;
+  }
+  return apiConfigured;
+}
 
 /**
  * ---------------------------------------------------------------------------
@@ -54,17 +75,10 @@ function buildSystem(profile) {
 }
 
 export async function callClaude(system, userMessage) {
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetch(API_ENDPOINT, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": ANTHROPIC_API_KEY,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: MODEL,
-      max_tokens: MAX_TOKENS,
       system,
       messages: [{ role: "user", content: userMessage }],
     }),

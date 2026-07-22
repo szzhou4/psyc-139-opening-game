@@ -14,11 +14,16 @@ Target completion time: 15–20 minutes.
 2. Run `npm install`
 3. Copy `.env.example` to `.env.local`
 4. Add your Anthropic API key to `.env.local`:
-   `VITE_ANTHROPIC_API_KEY=sk-ant-...`
+   `ANTHROPIC_API_KEY=sk-ant-...`
 5. Run `npm run dev`
 
 The app runs without a key — it falls back to the generic wording in
 `src/data/decisions.js` — but nothing will be personalized.
+
+> **The variable has no `VITE_` prefix, and that is deliberate.** Vite inlines
+> `VITE_`-prefixed variables into the browser bundle. This key is read
+> server-side by `api/claude.js` instead, so it never reaches the client.
+> Renaming it to `VITE_ANTHROPIC_API_KEY` would publish it to every visitor.
 
 ## Before First Use
 
@@ -28,25 +33,66 @@ Review and edit their content if you want to adjust scenarios or emphasis.
 
 Model is set in `src/api/claudeClient.js` (`claude-sonnet-4-5`).
 
-## Deployment
+## How the API key is protected
 
-Run `npm run build`, then deploy the `dist/` folder to GitHub Pages.
+The browser never receives the key. `src/api/claudeClient.js` posts to
+`/api/claude`, a serverless function (`api/claude.js`) that adds the key
+server-side and forwards the request to Anthropic.
 
-`vite.config.js` uses `base: "./"`, which works for both project pages
-(`user.github.io/repo/`) and root pages.
+That endpoint is deliberately narrow so it can't be repurposed as a free
+general-purpose Claude proxy if someone finds the URL:
 
-### ⚠️ Key exposure
+- the model and token ceiling are pinned in the function, not sent by the client
+- only `system` and `messages` are forwarded
+- requests must come from an allowed origin
+- payloads over 100 KB are rejected
 
-`vite build` inlines `VITE_ANTHROPIC_API_KEY` into the JavaScript bundle. Anyone
-who loads the page can extract it from the source. That is an accepted tradeoff
-for a single class session, but:
+`npm run dev` mounts the *same* function file via a small plugin in
+`vite.config.js`, so local testing exercises the deployed code path rather than
+a second implementation that could drift.
 
-- Set a **spend limit** on the key in the Anthropic Console before class.
-- **Rotate or revoke the key immediately after class.**
+**GitHub Pages is not suitable for this app.** Pages serves static files only —
+there is no server to hold the key — so the only way to deploy there is to inline
+the key into the bundle, where anyone can read it. Use Vercel (below).
 
-For repeat use across semesters, move the API call behind a small serverless
-proxy (Cloudflare Worker, Vercel function) so the key stays server-side, and
-point `callClaude` in `src/api/claudeClient.js` at that endpoint instead.
+## Deployment (Vercel)
+
+One-time setup:
+
+1. Go to [vercel.com/new](https://vercel.com/new) and sign in with GitHub.
+2. Import `szzhou4/psyc-139-opening-game`. Vercel detects Vite automatically —
+   accept the defaults (build `npm run build`, output `dist`).
+3. Before the first deploy, expand **Environment Variables** and add:
+   - Name: `ANTHROPIC_API_KEY`
+   - Value: your key
+   - Environments: Production, Preview, Development
+4. Click **Deploy**.
+
+You get a URL like `https://psyc-139-opening-game.vercel.app` — that's the link
+for students. Every `git push` to `main` redeploys automatically.
+
+If you add or change the key later, **redeploy** — environment variables are
+read at deploy time, so an existing deployment won't pick up a new value.
+
+### Verifying a deployment
+
+Visit `https://<your-app>.vercel.app/api/claude` in a browser. It should return:
+
+```json
+{ "configured": true }
+```
+
+`false` means the environment variable didn't reach the deployment — check the
+name is exactly `ANTHROPIC_API_KEY` (no `VITE_` prefix) and redeploy.
+
+To confirm the key is not in the client bundle, run `npm run build` and search
+`dist/` for `sk-ant`. It should return nothing.
+
+### Rotating the key
+
+Because the key stays server-side, it no longer has to be rotated after every
+class. Update it in **Vercel → Settings → Environment Variables**, then
+redeploy. Setting a spend limit in the Anthropic Console is still worthwhile.
 
 ## Cost estimate
 

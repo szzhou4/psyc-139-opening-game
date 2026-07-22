@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useReducer, useRef } from "react";
+import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { decisions as DECISIONS } from "./data/decisions";
 import {
   generateScenario,
   generateNarrative,
   generateOutcomeCard,
   generateNodeNotes,
-  hasApiKey,
+  isApiConfigured,
+  probeApi,
 } from "./api/claudeClient";
 import WelcomeScreen from "./components/WelcomeScreen";
 import OnboardingForm from "./components/OnboardingForm";
@@ -105,6 +106,15 @@ export default function App() {
   const inFlight = useRef(new Set());
   const finaleFired = useRef(false);
 
+  // null while unknown, false if the server has no key set. Only drives the
+  // instructor-facing notice; the generation paths read isApiConfigured()
+  // directly so they always see the current value.
+  const [apiConfigured, setApiConfigured] = useState(null);
+
+  useEffect(() => {
+    probeApi().then(setApiConfigured);
+  }, []);
+
   /**
    * Fetch a scenario if we don't already have it (or have one in flight).
    * Prefetching the *next* decision while the student reads the current one is
@@ -116,7 +126,7 @@ export default function App() {
       if (!decision) return;
       if (state.scenarios[decision.id] || inFlight.current.has(decision.id)) return;
 
-      if (!hasApiKey) {
+      if (isApiConfigured() === false) {
         dispatch({
           type: "SCENARIO_READY",
           id: decision.id,
@@ -166,7 +176,7 @@ export default function App() {
     if (state.screen !== "map" || finaleFired.current) return;
     finaleFired.current = true;
 
-    if (!hasApiKey) {
+    if (isApiConfigured() === false) {
       dispatch({
         type: "FINALE_READY",
         narrative: FALLBACK_NARRATIVE,
@@ -210,7 +220,7 @@ export default function App() {
 
       {state.screen === "onboarding" && (
         <OnboardingForm
-          apiKeyMissing={!hasApiKey}
+          apiKeyMissing={apiConfigured === false}
           onSubmit={(profile) => dispatch({ type: "SET_PROFILE", profile })}
         />
       )}
